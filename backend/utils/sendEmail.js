@@ -6,13 +6,16 @@ const nodemailer = require('nodemailer');
  */
 const sendVerificationEmail = async (email, token) => {
   const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
-
-  if (!user || !pass) {
+  const rawPass = process.env.EMAIL_PASS;
+  
+  if (!user || !rawPass) {
     console.log(`\n⚠️ [Nodemailer] SMTP credentials (EMAIL_USER / EMAIL_PASS) not configured in .env.`);
     console.log(`[Verification Fallback] Code for ${email} is: ${token}\n`);
     return;
   }
+
+  // Automatically remove spaces from the Google App Password
+  const pass = rawPass.replace(/\s+/g, '');
 
   try {
     const transporter = nodemailer.createTransport({
