@@ -29,6 +29,10 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ error: 'Password is required.' });
     }
 
+    if (password.length < 6 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long and contain both letters and numbers.' });
+    }
+
     // Determine email based on role
     const emailKey = role === 'NGO' ? 'officialEmail' : 'email';
     const emailVal = req.body[emailKey];

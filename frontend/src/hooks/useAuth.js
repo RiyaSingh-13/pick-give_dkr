@@ -83,8 +83,13 @@ export function useAuth({
   // Handlers
   const handleMemberSubmit = async (e) => {
     e.preventDefault();
-    if (!memberForm.password) {
+    const password = memberForm.password;
+    if (!password) {
       alert('Password is required.');
+      return;
+    }
+    if (password.length < 6 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      alert('Password must be at least 6 characters long and contain both letters and numbers.');
       return;
     }
     setMemberSuccess(true);
@@ -123,8 +128,13 @@ export function useAuth({
 
   const handleNgoSubmit = async (e) => {
     e.preventDefault();
-    if (!ngoForm.password) {
+    const password = ngoForm.password;
+    if (!password) {
       alert('Password is required.');
+      return;
+    }
+    if (password.length < 6 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      alert('Password must be at least 6 characters long and contain both letters and numbers.');
       return;
     }
     setNgoSuccess(true);
