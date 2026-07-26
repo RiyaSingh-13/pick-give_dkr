@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { Logo } from '../components/Logo';
+import { api } from '../services/api';
 
 // ============================================================================
 // DEDICATED ADMIN SIGN-IN PORTAL
@@ -16,7 +17,7 @@ export function AdminSignIn({ setIsAdminLoggedIn, navigateTo }) {
 
   useEffect(() => {
     // Check backend connection status
-    fetch('http://localhost:5001/api/users/ngos')
+    api.getNgos()
       .then(res => {
         if (res.ok) setBackendStatus('online');
         else setBackendStatus('error');
@@ -31,11 +32,7 @@ export function AdminSignIn({ setIsAdminLoggedIn, navigateTo }) {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5001/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
+      const res = await api.login(email, password);
 
       if (res.ok) {
         const user = await res.json();
@@ -67,11 +64,7 @@ export function AdminSignIn({ setIsAdminLoggedIn, navigateTo }) {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5001/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin@gmail.com', password: 'admin123' })
-      });
+      const res = await api.login('admin@gmail.com', 'admin123');
 
       if (res.ok) {
         const user = await res.json();

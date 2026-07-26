@@ -43,7 +43,15 @@ export function LandingPage({
   handleSignIn,
   handleFileChange,
   navigateTo,
-  adminNgos
+  adminNgos,
+  showVerificationModal,
+  setShowVerificationModal,
+  verificationEmail,
+  verificationCode,
+  setVerificationCode,
+  verificationError,
+  verificationSuccess,
+  handleVerifyEmail
 }) {
 
   // Statistics Array
@@ -100,6 +108,7 @@ export function LandingPage({
     setIsAdminLoggedIn(false);
     localStorage.removeItem('currentMember');
     localStorage.removeItem('currentNgo');
+    localStorage.removeItem('token');
     localStorage.setItem('isAdminLoggedIn', 'false');
     navigateTo('/');
   };
@@ -601,6 +610,14 @@ export function LandingPage({
         setSignInPassword={setSignInPassword}
         signInError={signInError}
         handleSignIn={handleSignIn}
+        showVerificationModal={showVerificationModal}
+        setShowVerificationModal={setShowVerificationModal}
+        verificationEmail={verificationEmail}
+        verificationCode={verificationCode}
+        setVerificationCode={setVerificationCode}
+        verificationError={verificationError}
+        verificationSuccess={verificationSuccess}
+        handleVerifyEmail={handleVerifyEmail}
       />
     </div>
   );

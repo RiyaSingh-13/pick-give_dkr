@@ -1,7 +1,18 @@
 // backend/controllers/userController.js
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const fallbackDb = require('../config/fallbackDb');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'pick-and-give-secret-key-12345';
+
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id || user.id, email: user.email || user.officialEmail, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '30d' }
+  );
+};
 
 // @desc    Register a new User (Member or NGO)
 // @route   POST /api/users/register
@@ -35,8 +46,12 @@ exports.registerUser = async (req, res) => {
 
       const newUser = fallbackDb.saveUser(req.body);
       const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
-      fallbackDb.saveLog(`New ${role} "${nameStr}" registered successfully`, role === 'NGO' ? 'Document' : 'User');
-      return res.status(201).json(newUser);
+      fallbackDb.saveLog(`New ${role} "${nameStr}" registered successfully (Awaiting Email Verification)`, role === 'NGO' ? 'Document' : 'User');
+      return res.status(201).json({
+        message: 'Registration successful. Verification code generated.',
+        email: emailVal,
+        role: role
+      });
     }
 
     // Check if user already exists
@@ -49,9 +64,15 @@ exports.registerUser = async (req, res) => {
     }
 
     // Create User record
+    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`\n==================================================`);
+    console.log(`[MongoDB Atlas] Verification Code for ${emailVal}: ${verificationToken}`);
+    console.log(`==================================================\n`);
+
     const userData = { ...req.body };
-    // Force email casing consistency
     userData[emailKey] = emailVal.toLowerCase();
+    userData.isVerified = false;
+    userData.emailVerificationToken = verificationToken;
 
     const newUser = new User(userData);
     await newUser.save();
@@ -59,15 +80,77 @@ exports.registerUser = async (req, res) => {
     // Log the registration event in System Audits
     const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
     const newLog = new AuditLog({
-      event: `New ${role} "${nameStr}" registered successfully`,
+      event: `New ${role} "${nameStr}" registered successfully (Awaiting Email Verification)`,
       category: role === 'NGO' ? 'Document' : 'User'
     });
     await newLog.save();
 
-    res.status(201).json(newUser);
+    res.status(201).json({
+      message: 'Registration successful. Verification code sent.',
+      email: emailVal,
+      role: role
+    });
   } catch (error) {
     console.error('registerUser Error:', error);
     res.status(500).json({ error: error.message || 'Internal Server Error' });
+  }
+};
+
+// @desc    Verify a user's email using 6-digit code
+// @route   POST /api/users/verify-email
+// @access  Public
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and 6-digit verification code are required.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Fallback DB
+    if (!global.isDbConnected) {
+      const user = fallbackDb.verifyUserEmail(normalizedEmail, code);
+      if (!user) {
+        return res.status(400).json({ error: 'Incorrect or invalid email verification code.' });
+      }
+      const token = generateToken(user);
+      fallbackDb.saveLog(`${user.role} "${user.fullName || user.ngoName}" email verified successfully`, 'User');
+      return res.status(200).json({ token, user });
+    }
+
+    // MongoDB
+    const user = await User.findOne({
+      $or: [
+        { email: normalizedEmail },
+        { officialEmail: normalizedEmail }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User record not found.' });
+    }
+
+    if (user.emailVerificationToken !== code) {
+      return res.status(400).json({ error: 'Incorrect or invalid email verification code.' });
+    }
+
+    user.isVerified = true;
+    user.emailVerificationToken = '';
+    await user.save();
+
+    const nameStr = user.role === 'NGO' ? user.ngoName : user.fullName;
+    const newLog = new AuditLog({
+      event: `${user.role} "${nameStr}" email verified successfully`,
+      category: 'User'
+    });
+    await newLog.save();
+
+    const token = generateToken(user);
+    res.status(200).json({ token, user });
+  } catch (error) {
+    console.error('verifyEmail Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
@@ -211,9 +294,19 @@ exports.loginUser = async (req, res) => {
         return res.status(401).json({ error: 'Incorrect password. Please try again.' });
       }
 
+      // Check verification
+      if (user.isVerified === false) {
+        return res.status(403).json({
+          error: 'Please verify your email address before logging in.',
+          email: normalizedEmail,
+          unverified: true
+        });
+      }
+
+      const token = generateToken(user);
       const nameStr = user.role === 'NGO' ? user.ngoName : user.fullName;
       fallbackDb.saveLog(`${user.role} "${nameStr}" signed in successfully`, 'Auth');
-      return res.status(200).json(user);
+      return res.status(200).json({ token, user });
     }
     
     // Find the user by email or officialEmail
@@ -233,6 +326,15 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ error: 'Incorrect password. Please try again.' });
     }
 
+    // Check verification
+    if (user.isVerified === false) {
+      return res.status(403).json({
+        error: 'Please verify your email address before logging in.',
+        email: normalizedEmail,
+        unverified: true
+      });
+    }
+
     // Log the successful login in system audits
     const nameStr = user.role === 'NGO' ? user.ngoName : user.fullName;
     const newLog = new AuditLog({
@@ -241,7 +343,8 @@ exports.loginUser = async (req, res) => {
     });
     await newLog.save();
 
-    res.status(200).json(user);
+    const token = generateToken(user);
+    res.status(200).json({ token, user });
   } catch (error) {
     console.error('loginUser Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });

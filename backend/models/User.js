@@ -47,6 +47,14 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: () => new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationToken: {
+    type: String,
+    default: ''
+  },
   
   // NGO-specific Verification fields
   description: {

@@ -27,6 +27,14 @@ export function useAuth({
   const [memberSuccess, setMemberSuccess] = useState(false);
   const [ngoSuccess, setNgoSuccess] = useState(false);
 
+  // Verification states
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationRole, setVerificationRole] = useState('Member');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+
   // Form states
   const [memberForm, setMemberForm] = useState({
     fullName: '',
@@ -49,6 +57,29 @@ export function useAuth({
 
   const [uploadedFileName, setUploadedFileName] = useState('');
 
+  // Helper to complete login session
+  const loginSession = (data) => {
+    const { token, user } = data;
+    localStorage.setItem('token', token);
+    if (user.role === 'Member') {
+      const initials = user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'M';
+      setCurrentMember({
+        fullName: user.fullName,
+        initials: initials,
+        email: user.email,
+        location: user.location,
+        phone: user.phone
+      });
+      navigateTo('/member');
+    } else if (user.role === 'NGO') {
+      setCurrentNgo(user);
+      navigateTo('/ngo');
+    } else if (user.role === 'Admin') {
+      setIsAdminLoggedIn(true);
+      navigateTo('/admin');
+    }
+  };
+
   // Handlers
   const handleMemberSubmit = async (e) => {
     e.preventDefault();
@@ -68,23 +99,17 @@ export function useAuth({
       });
 
       if (res.ok) {
-        const user = await res.json();
-        const initials = user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'RS';
-        setCurrentMember({
-          fullName: user.fullName,
-          initials: initials,
-          email: user.email,
-          location: user.location,
-          phone: user.phone
-        });
-
+        setVerificationEmail(memberForm.email);
+        setVerificationRole('Member');
+        setVerificationCode('');
+        setVerificationError('');
+        
         setTimeout(() => {
           setMemberSuccess(false);
           setShowMemberModal(false);
-          fetchAllData();
-          navigateTo('/member');
+          setShowVerificationModal(true);
           setMemberForm({ fullName: '', email: '', phone: '', location: '', password: '' });
-        }, 1200);
+        }, 1000);
       } else {
         const errData = await res.json();
         alert(errData.error || 'Failed to register.');
@@ -116,17 +141,18 @@ export function useAuth({
       });
 
       if (res.ok) {
-        const ngo = await res.json();
-        setCurrentNgo(ngo);
+        setVerificationEmail(ngoForm.officialEmail);
+        setVerificationRole('NGO');
+        setVerificationCode('');
+        setVerificationError('');
 
         setTimeout(() => {
           setNgoSuccess(false);
           setShowNgoModal(false);
-          fetchAllData();
-          navigateTo('/ngo');
+          setShowVerificationModal(true);
           setNgoForm({ ngoName: '', officialEmail: '', phone: '', address: '', description: '', registrationNumber: '', certificate: null, password: '' });
           setUploadedFileName('');
-        }, 1200);
+        }, 1000);
       } else {
         const errData = await res.json();
         alert(errData.error || 'Failed to register NGO.');
@@ -145,41 +171,59 @@ export function useAuth({
 
     try {
       const res = await api.login(signInEmail, signInPassword);
+      const data = await res.json();
 
       if (res.ok) {
-        const user = await res.json();
         setSignInSuccess(true);
         setTimeout(() => {
           setShowSignInModal(false);
           setSignInSuccess(false);
           setSignInEmail('');
           setSignInPassword('');
-          
-          if (user.role === 'Member') {
-            const initials = user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'M';
-            setCurrentMember({
-              fullName: user.fullName,
-              initials: initials,
-              email: user.email,
-              location: user.location,
-              phone: user.phone
-            });
-            navigateTo('/member');
-          } else if (user.role === 'NGO') {
-            setCurrentNgo(user);
-            navigateTo('/ngo');
-          } else if (user.role === 'Admin') {
-            setIsAdminLoggedIn(true);
-            navigateTo('/admin');
-          }
+          loginSession(data);
         }, 1200);
       } else {
-        const data = await res.json();
-        setSignInError(data.error || 'Failed to sign in. Please verify your email.');
+        if (res.status === 403 && data.unverified) {
+          setVerificationEmail(data.email);
+          setVerificationRole(data.role || 'Member');
+          setVerificationCode('');
+          setVerificationError('');
+          setShowSignInModal(false);
+          setShowVerificationModal(true);
+        } else {
+          setSignInError(data.error || 'Failed to sign in. Please verify your credentials.');
+        }
       }
     } catch (err) {
       console.error('Sign In Error:', err);
       setSignInError('Server connection error. Please try again later.');
+    }
+  };
+
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault();
+    setVerificationError('');
+    setVerificationSuccess(false);
+
+    try {
+      const res = await api.verifyEmail(verificationEmail, verificationCode);
+      const data = await res.json();
+
+      if (res.ok) {
+        setVerificationSuccess(true);
+        setTimeout(() => {
+          setShowVerificationModal(false);
+          setVerificationSuccess(false);
+          setVerificationCode('');
+          loginSession(data);
+          fetchAllData();
+        }, 1200);
+      } else {
+        setVerificationError(data.error || 'Incorrect code. Please try again.');
+      }
+    } catch (err) {
+      console.error('Verify Email Error:', err);
+      setVerificationError('Connection error. Please try again.');
     }
   };
 
@@ -212,6 +256,18 @@ export function useAuth({
     setMemberSuccess,
     ngoSuccess,
     setNgoSuccess,
+    showVerificationModal,
+    setShowVerificationModal,
+    verificationEmail,
+    setVerificationEmail,
+    verificationRole,
+    setVerificationRole,
+    verificationCode,
+    setVerificationCode,
+    verificationError,
+    setVerificationError,
+    verificationSuccess,
+    setVerificationSuccess,
     memberForm,
     setMemberForm,
     ngoForm,
@@ -221,6 +277,7 @@ export function useAuth({
     handleMemberSubmit,
     handleNgoSubmit,
     handleSignIn,
+    handleVerifyEmail,
     handleFileChange
   };
 }

@@ -4,6 +4,7 @@ import {
   Heart, Package, CheckCircle, Clipboard, Truck, Home, LogOut
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
+import { api } from '../services/api';
 
 // Import refactored sub-components
 import { NgoOverview } from '../components/Ngo/NgoOverview';
@@ -162,6 +163,7 @@ export function NgoDashboard({
               onClick={() => {
                 setCurrentNgo(null);
                 localStorage.removeItem('currentNgo');
+                localStorage.removeItem('token');
                 navigateTo('/');
               }}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/10 text-white font-bold transition-all cursor-pointer"
@@ -251,11 +253,7 @@ export function NgoDashboard({
                 onClick={async () => {
                   if (activeNgoRecord) {
                     try {
-                      const res = await fetch(`http://localhost:5001/api/users/ngos/${activeNgoRecord._id || activeNgoRecord.id}/verify`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'Approved' })
-                      });
+                      const res = await api.verifyNgo(activeNgoRecord._id || activeNgoRecord.id, 'Approved');
                       if (res.ok) {
                         fetchAllData();
                       }
@@ -285,11 +283,7 @@ export function NgoDashboard({
                 onClick={async () => {
                   if (activeNgoRecord) {
                     try {
-                      const res = await fetch(`http://localhost:5001/api/users/ngos/${activeNgoRecord._id || activeNgoRecord.id}/verify`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'Approved' })
-                      });
+                      const res = await api.verifyNgo(activeNgoRecord._id || activeNgoRecord.id, 'Approved');
                       if (res.ok) {
                         fetchAllData();
                       }

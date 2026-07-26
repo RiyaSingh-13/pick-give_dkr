@@ -47,6 +47,17 @@ if (!MONGODB_URI) {
     .then(() => {
       console.log('✅ Successfully connected to MongoDB Atlas database.');
       global.isDbConnected = true;
+      
+      // Migration: Ensure all existing users are verified
+      const User = require('./models/User');
+      User.updateMany({ isVerified: { $exists: false } }, { $set: { isVerified: true } })
+        .then(res => {
+          if (res.modifiedCount > 0) {
+            console.log(`🧹 Migration: Verified ${res.modifiedCount} existing accounts.`);
+          }
+        })
+        .catch(err => console.error('❌ Migration error:', err));
+
       // Run the automatic data seed
       seedDatabase();
     })

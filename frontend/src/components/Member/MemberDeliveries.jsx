@@ -6,6 +6,7 @@ import { SectionHeader } from '../UI/SectionHeader';
 import { Badge } from '../UI/Badge';
 import { Button } from '../UI/Button';
 import { Card } from '../UI/Card';
+import { api } from '../../services/api';
 
 export function MemberDeliveries({
   memberDeliveries,
@@ -104,11 +105,7 @@ export function MemberDeliveries({
                                     return;
                                   }
                                   try {
-                                    const res = await fetch(`http://localhost:5001/api/donations/${task.id}/verify-pickup`, {
-                                      method: 'PUT',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ otp, volunteerName: currentMember.fullName })
-                                    });
+                                    const res = await api.verifyPickupOtp(task.id, otp, currentMember.fullName);
                                     const data = await res.json();
                                     if (res.ok) {
                                       setOtpInputValues({ ...otpInputValues, [task.id]: '' });

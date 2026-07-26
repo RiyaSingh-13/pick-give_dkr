@@ -124,6 +124,7 @@ export function AdminDashboard({
             <button 
               onClick={() => {
                 setIsAdminLoggedIn(false);
+                localStorage.removeItem('token');
                 navigateTo('/');
               }}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/10 text-white font-bold transition-all cursor-pointer"

@@ -179,6 +179,7 @@ export function MemberDashboard({
               onClick={() => {
                 setCurrentMember(null);
                 localStorage.removeItem('currentMember');
+                localStorage.removeItem('token');
                 navigateTo('/');
               }}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-white/10 text-white font-bold transition-all cursor-pointer"

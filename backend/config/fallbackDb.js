@@ -9,7 +9,8 @@ const initialUsers = [
     password: 'admin123',
     phone: '+91 99999 88888',
     joinedDate: 'May 15, 2026',
-    status: 'Approved'
+    status: 'Approved',
+    isVerified: true
   }
 ];
 
@@ -73,14 +74,32 @@ const fallbackDb = {
   findUserByEmail: (email) => users.find(u => (u.email && u.email.toLowerCase() === email.toLowerCase()) || (u.officialEmail && u.officialEmail.toLowerCase() === email.toLowerCase())),
   saveUser: (userData) => {
     const id = "u_" + Math.random().toString(36).substr(2, 9);
+    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`\n==================================================`);
+    console.log(`[Offline Fallback DB] Verification Code for ${userData.email || userData.officialEmail}: ${verificationToken}`);
+    console.log(`==================================================\n`);
     const newUser = {
       _id: id,
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       status: userData.role === 'NGO' ? 'Pending' : 'Approved',
+      isVerified: false,
+      emailVerificationToken: verificationToken,
       ...userData
     };
     users.unshift(newUser);
     return newUser;
+  },
+  verifyUserEmail: (email, token) => {
+    const user = users.find(u => 
+      (u.email && u.email.toLowerCase() === email.toLowerCase()) || 
+      (u.officialEmail && u.officialEmail.toLowerCase() === email.toLowerCase())
+    );
+    if (user && user.emailVerificationToken === token) {
+      user.isVerified = true;
+      user.emailVerificationToken = '';
+      return user;
+    }
+    return null;
   },
   updateNgoStatus: (id, status) => {
     const ngo = users.find(u => u._id === id || u.id === id);

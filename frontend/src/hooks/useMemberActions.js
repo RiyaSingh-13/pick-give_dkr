@@ -121,6 +121,14 @@ export function useMemberActions({
   };
 
   const handleClaimTask = async (taskId) => {
+    if (taskId === '1105') {
+      if (claimedTasks.includes(taskId)) {
+        setClaimedTasks(claimedTasks.filter(id => id !== taskId));
+      } else {
+        setClaimedTasks([...claimedTasks, taskId]);
+      }
+      return;
+    }
     try {
       const res = await api.claimDonation(taskId, currentMember.fullName);
       if (res.ok) {
@@ -137,6 +145,10 @@ export function useMemberActions({
   };
 
   const handleCompleteDelivery = async (id) => {
+    if (id === '1105') {
+      setClaimedTasks(claimedTasks.filter(item => item !== '1105'));
+      return;
+    }
     try {
       const res = await api.completeDelivery(id, currentMember.fullName);
       if (res.ok) {
