@@ -86,6 +86,7 @@ export function AuthModals({
                 onChange={(e) => setMemberForm({ ...memberForm, email: e.target.value })}
                 className="input-box border border-forest/20 animate-fade-in"
                 placeholder="you@example.com"
+                autoComplete="off"
               />
             </div>
 
@@ -125,6 +126,7 @@ export function AuthModals({
                 onChange={(e) => setMemberForm({ ...memberForm, password: e.target.value })}
                 className="input-box border border-forest/20 animate-fade-in"
                 placeholder="Create a secure password"
+                autoComplete="new-password"
               />
             </div>
 
@@ -186,6 +188,7 @@ export function AuthModals({
                 onChange={(e) => setNgoForm({ ...ngoForm, officialEmail: e.target.value })}
                 className="input-box border border-forest/20 animate-fade-in"
                 placeholder="ngo@organization.org"
+                autoComplete="off"
               />
             </div>
 
@@ -270,6 +273,7 @@ export function AuthModals({
                 onChange={(e) => setNgoForm({ ...ngoForm, password: e.target.value })}
                 className="input-box border border-forest/20 animate-fade-in"
                 placeholder="Create a secure password"
+                autoComplete="new-password"
               />
             </div>
 
