@@ -1,4 +1,4 @@
-// backend/server.js - Reloaded credentials
+// backend/server.js - Configured correct email user
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
