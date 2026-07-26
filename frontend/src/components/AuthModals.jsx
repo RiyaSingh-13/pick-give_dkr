@@ -359,6 +359,7 @@ export function AuthModals({
               </Button>
             </div>
           </form>
+        )}
       </Modal>
 
       {/* EMAIL VERIFICATION MODAL */}
