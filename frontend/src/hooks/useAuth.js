@@ -31,15 +31,6 @@ export function useAuth({
   const [memberError, setMemberError] = useState('');
   const [ngoError, setNgoError] = useState('');
 
-  // Reset errors when modal changes
-  useEffect(() => {
-    if (showMemberModal) setMemberError('');
-  }, [showMemberModal]);
-
-  useEffect(() => {
-    if (showNgoModal) setNgoError('');
-  }, [showNgoModal]);
-
   // Verification states
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
@@ -69,6 +60,15 @@ export function useAuth({
   });
 
   const [uploadedFileName, setUploadedFileName] = useState('');
+
+  // Reset errors when modal changes
+  useEffect(() => {
+    if (showMemberModal) setMemberError('');
+  }, [showMemberModal]);
+
+  useEffect(() => {
+    if (showNgoModal) setNgoError('');
+  }, [showNgoModal]);
 
   // Helper to complete login session
   const loginSession = (data) => {
