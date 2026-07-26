@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const fallbackDb = require('../config/fallbackDb');
+const { sendVerificationEmail } = require('../utils/sendEmail');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pick-and-give-secret-key-12345';
 
@@ -51,6 +52,10 @@ exports.registerUser = async (req, res) => {
       const newUser = fallbackDb.saveUser(req.body);
       const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
       fallbackDb.saveLog(`New ${role} "${nameStr}" registered successfully (Awaiting Email Verification)`, role === 'NGO' ? 'Document' : 'User');
+      
+      // Dispatch verification email
+      sendVerificationEmail(emailVal, newUser.emailVerificationToken);
+
       return res.status(201).json({
         message: 'Registration successful. Verification code generated.',
         email: emailVal,
@@ -80,6 +85,9 @@ exports.registerUser = async (req, res) => {
 
     const newUser = new User(userData);
     await newUser.save();
+
+    // Dispatch verification email
+    sendVerificationEmail(emailVal, verificationToken);
 
     // Log the registration event in System Audits
     const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
