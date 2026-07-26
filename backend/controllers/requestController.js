@@ -2,6 +2,7 @@
 const Request = require('../models/Request');
 const User = require('../models/User');
 const fallbackDb = require('../config/fallbackDb');
+const { getCache, setCache, clearCache } = require('../config/redis');
 
 // @desc    Post a new NGO Request/Requirement
 // @route   POST /api/requests
@@ -47,6 +48,10 @@ exports.createRequest = async (req, res) => {
     });
 
     await newRequest.save();
+    
+    // Clear Redis Cache
+    clearCache('requests:all');
+
     res.status(201).json(newRequest);
   } catch (error) {
     console.error('createRequest Error:', error);
@@ -64,7 +69,19 @@ exports.getRequests = async (req, res) => {
       return res.status(200).json(requests);
     }
 
+    // Try reading requests list from Redis Cache first
+    const cacheKey = 'requests:all';
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      console.log('⚡ [Redis] Serving requests list from cache.');
+      return res.status(200).json(JSON.parse(cachedData));
+    }
+
     const requests = await Request.find().sort({ createdAt: -1 });
+
+    // Store in Redis Cache for 60 seconds (TTL)
+    await setCache(cacheKey, JSON.stringify(requests), 60);
+
     res.status(200).json(requests);
   } catch (error) {
     console.error('getRequests Error:', error);
@@ -90,6 +107,10 @@ exports.stopRequest = async (req, res) => {
     if (!updated) {
       return res.status(404).json({ error: 'Request not found.' });
     }
+
+    // Clear Redis Cache
+    clearCache('requests:all');
+
     res.status(200).json(updated);
   } catch (error) {
     console.error('stopRequest Error:', error);

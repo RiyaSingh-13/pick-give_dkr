@@ -1,5 +1,6 @@
 // backend/controllers/donationController.js
 const Donation = require('../models/Donation');
+const { getCache, setCache, clearCache } = require('../config/redis');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const fallbackDb = require('../config/fallbackDb');
@@ -54,6 +55,9 @@ exports.createDonation = async (req, res) => {
     // Audit log ko save karna
     await newLog.save();
 
+    // Clear Redis Cache
+    clearCache('donations:all');
+
     // Success response bhejna
     res.status(201).json(newDonation);
   } catch (error) {
@@ -75,8 +79,20 @@ exports.getDonations = async (req, res) => {
       return res.status(200).json(donations);
     }
 
+    // Try reading donations list from Redis Cache first
+    const cacheKey = 'donations:all';
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      console.log('⚡ [Redis] Serving donations list from cache.');
+      return res.status(200).json(JSON.parse(cachedData));
+    }
+
     // MongoDB se saari donations fetch karna aur unhe new to old (descending order) me sort karna
     const donations = await Donation.find().sort({ createdAt: -1 });
+
+    // Store in Redis Cache for 60 seconds (TTL)
+    await setCache(cacheKey, JSON.stringify(donations), 60);
+
     // Success response bhejna
     res.status(200).json(donations);
   } catch (error) {
@@ -191,6 +207,9 @@ exports.acceptDonation = async (req, res) => {
 
     // Audit Log database me save karna
     await newLog.save();
+
+    // Clear Redis Cache
+    clearCache('donations:all');
 
     // Success response bhejna
     res.status(200).json(donation);
@@ -360,6 +379,9 @@ exports.completeDonationDelivery = async (req, res) => {
     // Audit log save karna
     await newLog.save();
 
+    // Clear Redis Cache
+    clearCache('donations:all');
+
     // Success response return karna
     res.status(200).json(donation);
   } catch (error) {
@@ -438,6 +460,9 @@ exports.verifyPickup = async (req, res) => {
     });
     // Log save karna database me
     await newLog.save();
+
+    // Clear Redis Cache
+    clearCache('donations:all');
 
     // Success response return karna
     res.status(200).json(donation);
@@ -546,6 +571,9 @@ exports.completeSelfDelivery = async (req, res) => {
     });
     // Log save karna database me
     await newLog.save();
+
+    // Clear Redis Cache
+    clearCache('donations:all');
 
     // Success response return karna
     res.status(200).json(donation);
