@@ -1,4 +1,4 @@
-// backend/server.js - Reloading nodemon config
+// backend/server.js - Reloaded credentials
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
