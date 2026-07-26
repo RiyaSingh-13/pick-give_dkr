@@ -27,6 +27,19 @@ export function useAuth({
   const [memberSuccess, setMemberSuccess] = useState(false);
   const [ngoSuccess, setNgoSuccess] = useState(false);
 
+  // Form submission error states
+  const [memberError, setMemberError] = useState('');
+  const [ngoError, setNgoError] = useState('');
+
+  // Reset errors when modal changes
+  useEffect(() => {
+    if (showMemberModal) setMemberError('');
+  }, [showMemberModal]);
+
+  useEffect(() => {
+    if (showNgoModal) setNgoError('');
+  }, [showNgoModal]);
+
   // Verification states
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
@@ -83,13 +96,14 @@ export function useAuth({
   // Handlers
   const handleMemberSubmit = async (e) => {
     e.preventDefault();
+    setMemberError('');
     const password = memberForm.password;
     if (!password) {
-      alert('Password is required.');
+      setMemberError('Password is required.');
       return;
     }
     if (password.length < 6 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      alert('Password must be at least 6 characters long and contain both letters and numbers.');
+      setMemberError('Password must be at least 6 characters long and contain both letters and numbers.');
       return;
     }
     setMemberSuccess(true);
@@ -117,24 +131,26 @@ export function useAuth({
         }, 1000);
       } else {
         const errData = await res.json();
-        alert(errData.error || 'Failed to register.');
+        setMemberError(errData.error || 'Failed to register.');
         setMemberSuccess(false);
       }
     } catch (err) {
       console.error('Member submit error:', err);
+      setMemberError('Connection error. Please try again.');
       setMemberSuccess(false);
     }
   };
 
   const handleNgoSubmit = async (e) => {
     e.preventDefault();
+    setNgoError('');
     const password = ngoForm.password;
     if (!password) {
-      alert('Password is required.');
+      setNgoError('Password is required.');
       return;
     }
     if (password.length < 6 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      alert('Password must be at least 6 characters long and contain both letters and numbers.');
+      setNgoError('Password must be at least 6 characters long and contain both letters and numbers.');
       return;
     }
     setNgoSuccess(true);
@@ -165,11 +181,12 @@ export function useAuth({
         }, 1000);
       } else {
         const errData = await res.json();
-        alert(errData.error || 'Failed to register NGO.');
+        setNgoError(errData.error || 'Failed to register NGO.');
         setNgoSuccess(false);
       }
     } catch (err) {
       console.error('NGO submit error:', err);
+      setNgoError('Connection error. Please try again.');
       setNgoSuccess(false);
     }
   };
@@ -266,6 +283,10 @@ export function useAuth({
     setMemberSuccess,
     ngoSuccess,
     setNgoSuccess,
+    memberError,
+    setMemberError,
+    ngoError,
+    setNgoError,
     showVerificationModal,
     setShowVerificationModal,
     verificationEmail,

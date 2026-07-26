@@ -36,7 +36,9 @@ export function AuthModals({
   setVerificationCode,
   verificationError,
   verificationSuccess,
-  handleVerifyEmail
+  handleVerifyEmail,
+  memberError,
+  ngoError
 }) {
   return (
     <>
@@ -65,6 +67,11 @@ export function AuthModals({
           </div>
         ) : (
           <form onSubmit={handleMemberSubmit} className="space-y-6 relative z-10 text-left">
+            {memberError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-xl text-xs font-semibold leading-relaxed animate-fade-in text-left">
+                ⚠️ {memberError}
+              </div>
+            )}
             <div>
               <label className="input-label">1. Full Name:</label>
               <input 
@@ -167,6 +174,11 @@ export function AuthModals({
           </div>
         ) : (
           <form onSubmit={handleNgoSubmit} className="space-y-5 text-left max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+            {ngoError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-xl text-xs font-semibold leading-relaxed animate-fade-in text-left">
+                ⚠️ {ngoError}
+              </div>
+            )}
             <div>
               <label className="input-label">1. NGO Name:</label>
               <input 

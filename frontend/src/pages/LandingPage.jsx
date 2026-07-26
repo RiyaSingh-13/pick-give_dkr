@@ -51,7 +51,9 @@ export function LandingPage({
   setVerificationCode,
   verificationError,
   verificationSuccess,
-  handleVerifyEmail
+  handleVerifyEmail,
+  memberError,
+  ngoError
 }) {
 
   // Statistics Array
@@ -618,6 +620,8 @@ export function LandingPage({
         verificationError={verificationError}
         verificationSuccess={verificationSuccess}
         handleVerifyEmail={handleVerifyEmail}
+        memberError={memberError}
+        ngoError={ngoError}
       />
     </div>
   );
