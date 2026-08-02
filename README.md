@@ -142,4 +142,4 @@ For step-by-step instructions on deploying the application live, please refer to
 ---
 
 ## 📄 License
-This project is open-source and available under the MIT License.
+This project is open-source and available under the MIT License. ***
