@@ -25,6 +25,9 @@ const sendVerificationEmail = async (email, token) => {
       auth: {
         user: user,
         pass: pass
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
 
@@ -32,6 +35,7 @@ const sendVerificationEmail = async (email, token) => {
       from: `"Pick&Give Support" <${user}>`,
       to: email,
       subject: 'Verify Your Email Address - Pick&Give',
+      text: `Welcome aboard! To complete your registration and secure your account, please enter the 6-digit verification code: ${token}`,
       html: `
         <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F8FAF5; padding: 40px 20px; text-align: center;">
           <div style="max-w: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(15, 52, 15, 0.05); border: 1px solid rgba(15, 52, 15, 0.05);">
