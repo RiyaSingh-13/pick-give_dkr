@@ -397,7 +397,7 @@ export function AuthModals({
             </span>
           ) : (
             <span className="text-leaf block mt-2 font-extrabold bg-[#78A642]/10 p-2 rounded-xl">
-              💡 Please check your console/audit logs to retrieve your verification code.
+              💡 We shared verification code to your email.
             </span>
           )}
         </p>

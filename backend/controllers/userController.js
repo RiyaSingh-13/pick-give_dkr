@@ -54,7 +54,7 @@ exports.registerUser = async (req, res) => {
       fallbackDb.saveLog(`New ${role} "${nameStr}" registered successfully (Awaiting Email Verification)`, role === 'NGO' ? 'Document' : 'User');
       
       // Dispatch verification email
-      sendVerificationEmail(emailVal, newUser.emailVerificationToken);
+      await sendVerificationEmail(emailVal, newUser.emailVerificationToken);
 
       return res.status(201).json({
         message: 'Registration successful. Verification code generated.',
@@ -87,7 +87,7 @@ exports.registerUser = async (req, res) => {
     await newUser.save();
 
     // Dispatch verification email
-    sendVerificationEmail(emailVal, verificationToken);
+    await sendVerificationEmail(emailVal, verificationToken);
 
     // Log the registration event in System Audits
     const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
