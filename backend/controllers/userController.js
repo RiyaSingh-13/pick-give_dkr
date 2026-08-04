@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const fallbackDb = require('../config/fallbackDb');
-const { sendVerificationEmail } = require('../utils/sendEmail');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pick-and-give-secret-key-12345';
 
@@ -51,15 +50,13 @@ exports.registerUser = async (req, res) => {
 
       const newUser = fallbackDb.saveUser(req.body);
       const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
-      fallbackDb.saveLog(`New ${role} "${nameStr}" registered successfully (Awaiting Email Verification)`, role === 'NGO' ? 'Document' : 'User');
+      fallbackDb.saveLog(`New ${role} "${nameStr}" registered successfully`, role === 'NGO' ? 'Document' : 'User');
       
-      // Dispatch verification email
-      await sendVerificationEmail(emailVal, newUser.emailVerificationToken);
-
+      const token = generateToken(newUser);
       return res.status(201).json({
-        message: 'Registration successful. Verification code generated.',
-        email: emailVal,
-        role: role
+        message: 'Registration successful.',
+        token,
+        user: newUser
       });
     }
 
@@ -73,34 +70,26 @@ exports.registerUser = async (req, res) => {
     }
 
     // Create User record
-    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`\n==================================================`);
-    console.log(`[MongoDB Atlas] Verification Code for ${emailVal}: ${verificationToken}`);
-    console.log(`==================================================\n`);
-
     const userData = { ...req.body };
     userData[emailKey] = emailVal.toLowerCase();
-    userData.isVerified = false;
-    userData.emailVerificationToken = verificationToken;
+    userData.isVerified = true;
 
     const newUser = new User(userData);
     await newUser.save();
 
-    // Dispatch verification email
-    await sendVerificationEmail(emailVal, verificationToken);
-
     // Log the registration event in System Audits
     const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
     const newLog = new AuditLog({
-      event: `New ${role} "${nameStr}" registered successfully (Awaiting Email Verification)`,
+      event: `New ${role} "${nameStr}" registered successfully`,
       category: role === 'NGO' ? 'Document' : 'User'
     });
     await newLog.save();
 
+    const token = generateToken(newUser);
     res.status(201).json({
-      message: 'Registration successful. Verification code sent.',
-      email: emailVal,
-      role: role
+      message: 'Registration successful.',
+      token,
+      user: newUser
     });
   } catch (error) {
     console.error('registerUser Error:', error);
@@ -306,15 +295,6 @@ exports.loginUser = async (req, res) => {
         return res.status(401).json({ error: 'Incorrect password. Please try again.' });
       }
 
-      // Check verification
-      if (user.isVerified === false) {
-        return res.status(403).json({
-          error: 'Please verify your email address before logging in.',
-          email: normalizedEmail,
-          unverified: true
-        });
-      }
-
       const token = generateToken(user);
       const nameStr = user.role === 'NGO' ? user.ngoName : user.fullName;
       fallbackDb.saveLog(`${user.role} "${nameStr}" signed in successfully`, 'Auth');
@@ -336,15 +316,6 @@ exports.loginUser = async (req, res) => {
     // Validate password
     if (user.password !== password) {
       return res.status(401).json({ error: 'Incorrect password. Please try again.' });
-    }
-
-    // Check verification
-    if (user.isVerified === false) {
-      return res.status(403).json({
-        error: 'Please verify your email address before logging in.',
-        email: normalizedEmail,
-        unverified: true
-      });
     }
 
     // Log the successful login in system audits

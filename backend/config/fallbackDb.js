@@ -74,16 +74,11 @@ const fallbackDb = {
   findUserByEmail: (email) => users.find(u => (u.email && u.email.toLowerCase() === email.toLowerCase()) || (u.officialEmail && u.officialEmail.toLowerCase() === email.toLowerCase())),
   saveUser: (userData) => {
     const id = "u_" + Math.random().toString(36).substr(2, 9);
-    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log(`\n==================================================`);
-    console.log(`[Offline Fallback DB] Verification Code for ${userData.email || userData.officialEmail}: ${verificationToken}`);
-    console.log(`==================================================\n`);
     const newUser = {
       _id: id,
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       status: userData.role === 'NGO' ? 'Pending' : 'Approved',
-      isVerified: false,
-      emailVerificationToken: verificationToken,
+      isVerified: true,
       ...userData
     };
     users.unshift(newUser);

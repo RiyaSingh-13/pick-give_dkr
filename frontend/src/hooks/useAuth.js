@@ -118,15 +118,12 @@ export function useAuth({
       });
 
       if (res.ok) {
-        setVerificationEmail(memberForm.email);
-        setVerificationRole('Member');
-        setVerificationCode('');
-        setVerificationError('');
-        
+        const data = await res.json();
         setTimeout(() => {
           setMemberSuccess(false);
           setShowMemberModal(false);
-          setShowVerificationModal(true);
+          loginSession(data);
+          fetchAllData();
           setMemberForm({ fullName: '', email: '', phone: '', location: '', password: '' });
         }, 1000);
       } else {
@@ -167,15 +164,12 @@ export function useAuth({
       });
 
       if (res.ok) {
-        setVerificationEmail(ngoForm.officialEmail);
-        setVerificationRole('NGO');
-        setVerificationCode('');
-        setVerificationError('');
-
+        const data = await res.json();
         setTimeout(() => {
           setNgoSuccess(false);
           setShowNgoModal(false);
-          setShowVerificationModal(true);
+          loginSession(data);
+          fetchAllData();
           setNgoForm({ ngoName: '', officialEmail: '', phone: '', address: '', description: '', registrationNumber: '', certificate: null, password: '' });
           setUploadedFileName('');
         }, 1000);
@@ -210,16 +204,7 @@ export function useAuth({
           loginSession(data);
         }, 1200);
       } else {
-        if (res.status === 403 && data.unverified) {
-          setVerificationEmail(data.email);
-          setVerificationRole(data.role || 'Member');
-          setVerificationCode('');
-          setVerificationError('');
-          setShowSignInModal(false);
-          setShowVerificationModal(true);
-        } else {
-          setSignInError(data.error || 'Failed to sign in. Please verify your credentials.');
-        }
+        setSignInError(data.error || 'Failed to sign in. Please verify your credentials.');
       }
     } catch (err) {
       console.error('Sign In Error:', err);
