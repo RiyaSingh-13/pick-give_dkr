@@ -32,7 +32,7 @@ const sendVerificationEmail = async (email, token) => {
     });
 
     const mailOptions = {
-      from: `"Pick&Give Support" <${user}>`,
+      from: user,
       to: email,
       subject: 'Verify Your Email Address - Pick&Give',
       text: `Welcome aboard! To complete your registration and secure your account, please enter the 6-digit verification code: ${token}`,
