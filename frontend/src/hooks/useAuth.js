@@ -119,13 +119,24 @@ export function useAuth({
 
       if (res.ok) {
         const data = await res.json();
-        setTimeout(() => {
-          setMemberSuccess(false);
-          setShowMemberModal(false);
-          loginSession(data);
-          fetchAllData();
-          setMemberForm({ fullName: '', email: '', phone: '', location: '', password: '' });
-        }, 1000);
+        if (data.needsVerification) {
+          setVerificationEmail(data.email);
+          setVerificationRole('Member');
+          setTimeout(() => {
+            setMemberSuccess(false);
+            setShowMemberModal(false);
+            setShowVerificationModal(true);
+            setMemberForm({ fullName: '', email: '', phone: '', location: '', password: '' });
+          }, 1000);
+        } else {
+          setTimeout(() => {
+            setMemberSuccess(false);
+            setShowMemberModal(false);
+            loginSession(data);
+            fetchAllData();
+            setMemberForm({ fullName: '', email: '', phone: '', location: '', password: '' });
+          }, 1000);
+        }
       } else {
         const errData = await res.json();
         setMemberError(errData.error || 'Failed to register.');
@@ -165,14 +176,26 @@ export function useAuth({
 
       if (res.ok) {
         const data = await res.json();
-        setTimeout(() => {
-          setNgoSuccess(false);
-          setShowNgoModal(false);
-          loginSession(data);
-          fetchAllData();
-          setNgoForm({ ngoName: '', officialEmail: '', phone: '', address: '', description: '', registrationNumber: '', certificate: null, password: '' });
-          setUploadedFileName('');
-        }, 1000);
+        if (data.needsVerification) {
+          setVerificationEmail(data.email);
+          setVerificationRole('NGO');
+          setTimeout(() => {
+            setNgoSuccess(false);
+            setShowNgoModal(false);
+            setShowVerificationModal(true);
+            setNgoForm({ ngoName: '', officialEmail: '', phone: '', address: '', description: '', registrationNumber: '', certificate: null, password: '' });
+            setUploadedFileName('');
+          }, 1000);
+        } else {
+          setTimeout(() => {
+            setNgoSuccess(false);
+            setShowNgoModal(false);
+            loginSession(data);
+            fetchAllData();
+            setNgoForm({ ngoName: '', officialEmail: '', phone: '', address: '', description: '', registrationNumber: '', certificate: null, password: '' });
+            setUploadedFileName('');
+          }, 1000);
+        }
       } else {
         const errData = await res.json();
         setNgoError(errData.error || 'Failed to register NGO.');
@@ -195,14 +218,21 @@ export function useAuth({
       const data = await res.json();
 
       if (res.ok) {
-        setSignInSuccess(true);
-        setTimeout(() => {
+        if (data.needsVerification) {
+          setVerificationEmail(data.email);
+          setVerificationRole(data.role || 'Member');
           setShowSignInModal(false);
-          setSignInSuccess(false);
-          setSignInEmail('');
-          setSignInPassword('');
-          loginSession(data);
-        }, 1200);
+          setShowVerificationModal(true);
+        } else {
+          setSignInSuccess(true);
+          setTimeout(() => {
+            setShowSignInModal(false);
+            setSignInSuccess(false);
+            setSignInEmail('');
+            setSignInPassword('');
+            loginSession(data);
+          }, 1200);
+        }
       } else {
         setSignInError(data.error || 'Failed to sign in. Please verify your credentials.');
       }

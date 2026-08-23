@@ -373,6 +373,73 @@ export function AuthModals({
           </form>
         )}
       </Modal>
+
+      {/* EMAIL VERIFICATION MODAL */}
+      <Modal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        maxWidth="max-w-md"
+      >
+        <div className="flex justify-center mb-6">
+          <Logo showText={false} />
+        </div>
+
+        <h2 className="text-2xl md:text-3xl font-extrabold text-[#1A3828] text-center mb-6 font-serif uppercase tracking-tight leading-tight">
+          Verify Email<br />
+          <span className="text-leaf">Enter Code</span>
+        </h2>
+
+        {verificationSuccess ? (
+          <div className="text-center py-8 flex flex-col items-center gap-4 animate-pulse">
+            <div className="w-14 h-14 rounded-full bg-leaf/10 flex items-center justify-center text-leaf">
+              <Check className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-forest font-serif">Email Verified!</h3>
+            <p className="text-xs text-mutegreen font-semibold">Logging you in...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleVerifyEmail} className="space-y-5 relative z-10 text-left">
+            {verificationError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-xl text-xs font-semibold leading-relaxed animate-fade-in text-left">
+                ⚠️ {verificationError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <p className="text-xs text-mutegreen font-medium leading-relaxed text-center">
+                We've sent a 6-digit verification code to:<br/>
+                <span className="font-bold text-forest">{verificationEmail}</span>
+              </p>
+              
+              <div>
+                <label className="input-label text-center block">Verification Code:</label>
+                <input 
+                  type="text" 
+                  required 
+                  maxLength={6}
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                  className="input-box border border-forest/20 animate-fade-in text-center font-mono text-xl tracking-[0.5em] font-extrabold"
+                  placeholder="------"
+                />
+              </div>
+
+              <p className="text-[10px] text-mutegreen font-semibold leading-relaxed text-center font-sans">
+                Please check your inbox (and spam folder) for the 6-digit code.
+              </p>
+            </div>
+
+            <div className="pt-2 flex justify-center">
+              <Button 
+                type="submit"
+                className="w-full px-10 py-3.5 text-base font-bold"
+              >
+                VERIFY & CONTINUE
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </>
   );
 }

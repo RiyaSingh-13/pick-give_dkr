@@ -41,6 +41,22 @@ export function useAppLogic() {
     localStorage.setItem('isAdminLoggedIn', isAdminLoggedIn ? 'true' : 'false');
   }, [isAdminLoggedIn]);
 
+  // Validate session token presence
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if ((currentMember || currentNgo || isAdminLoggedIn) && !token) {
+      console.warn('Session active but no authentication token found. Clearing session...');
+      setCurrentMember(null);
+      setCurrentNgo(null);
+      setIsAdminLoggedIn(false);
+      localStorage.removeItem('currentMember');
+      localStorage.removeItem('currentNgo');
+      localStorage.removeItem('isAdminLoggedIn');
+      localStorage.removeItem('token');
+      navigateTo('/');
+    }
+  }, [currentMember, currentNgo, isAdminLoggedIn]);
+
   const [donations, setDonations] = useState([]);
   const [adminNgos, setAdminNgos] = useState([]);
   const [adminUsers, setAdminUsers] = useState([]);

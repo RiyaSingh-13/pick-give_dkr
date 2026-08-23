@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const fallbackDb = require('../config/fallbackDb');
+const emailService = require('../utils/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pick-and-give-secret-key-12345';
 
@@ -48,15 +49,26 @@ exports.registerUser = async (req, res) => {
         return res.status(400).json({ error: 'A user with this email already exists.' });
       }
 
-      const newUser = fallbackDb.saveUser(req.body);
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      const newUser = fallbackDb.saveUser({
+        ...req.body,
+        isVerified: false,
+        emailVerificationToken: verificationCode
+      });
       const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
-      fallbackDb.saveLog(`New ${role} "${nameStr}" registered successfully`, role === 'NGO' ? 'Document' : 'User');
+      fallbackDb.saveLog(`New ${role} "${nameStr}" registered (verification pending)`, role === 'NGO' ? 'Document' : 'User');
       
-      const token = generateToken(newUser);
+      try {
+        await emailService.sendVerificationEmail(emailVal.toLowerCase(), verificationCode, nameStr);
+      } catch (emailErr) {
+        console.error('Failed to send verification email on registration (fallback DB):', emailErr);
+      }
+      
       return res.status(201).json({
-        message: 'Registration successful.',
-        token,
-        user: newUser
+        message: 'Registration successful. Verification code sent to email.',
+        needsVerification: true,
+        email: emailVal.toLowerCase()
       });
     }
 
@@ -69,10 +81,14 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ error: 'A user with this email already exists.' });
     }
 
+    // Generate verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
     // Create User record
     const userData = { ...req.body };
     userData[emailKey] = emailVal.toLowerCase();
-    userData.isVerified = true;
+    userData.isVerified = false;
+    userData.emailVerificationToken = verificationCode;
 
     const newUser = new User(userData);
     await newUser.save();
@@ -80,16 +96,21 @@ exports.registerUser = async (req, res) => {
     // Log the registration event in System Audits
     const nameStr = role === 'NGO' ? newUser.ngoName : newUser.fullName;
     const newLog = new AuditLog({
-      event: `New ${role} "${nameStr}" registered successfully`,
+      event: `New ${role} "${nameStr}" registered (verification pending)`,
       category: role === 'NGO' ? 'Document' : 'User'
     });
     await newLog.save();
 
-    const token = generateToken(newUser);
+    try {
+      await emailService.sendVerificationEmail(emailVal.toLowerCase(), verificationCode, nameStr);
+    } catch (emailErr) {
+      console.error('Failed to send verification email on registration:', emailErr);
+    }
+
     res.status(201).json({
-      message: 'Registration successful.',
-      token,
-      user: newUser
+      message: 'Registration successful. Verification code sent to email.',
+      needsVerification: true,
+      email: emailVal.toLowerCase()
     });
   } catch (error) {
     console.error('registerUser Error:', error);
@@ -207,6 +228,13 @@ exports.verifyNgo = async (req, res) => {
         return res.status(404).json({ error: 'NGO record not found.' });
       }
       fallbackDb.saveLog(`NGO "${ngo.ngoName}" status updated to: ${status} by administrator`, 'Document');
+      
+      try {
+        await emailService.sendNgoStatusEmail(ngo.officialEmail, status, ngo.ngoName);
+      } catch (emailErr) {
+        console.error('Failed to send NGO status email (fallback DB):', emailErr);
+      }
+      
       return res.status(200).json(ngo);
     }
 
@@ -224,6 +252,12 @@ exports.verifyNgo = async (req, res) => {
       category: 'Document'
     });
     await newLog.save();
+
+    try {
+      await emailService.sendNgoStatusEmail(ngo.officialEmail, status, ngo.ngoName);
+    } catch (emailErr) {
+      console.error('Failed to send NGO status email:', emailErr);
+    }
 
     res.status(200).json(ngo);
   } catch (error) {
@@ -295,8 +329,28 @@ exports.loginUser = async (req, res) => {
         return res.status(401).json({ error: 'Incorrect password. Please try again.' });
       }
 
-      const token = generateToken(user);
       const nameStr = user.role === 'NGO' ? user.ngoName : user.fullName;
+
+      // Check email verification status
+      if (!user.isVerified) {
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.emailVerificationToken = verificationCode;
+        
+        try {
+          await emailService.sendVerificationEmail(normalizedEmail, verificationCode, nameStr);
+        } catch (emailErr) {
+          console.error('Failed to send verification email on login (fallback DB):', emailErr);
+        }
+
+        return res.status(200).json({
+          message: 'Account is not verified yet. A verification code has been sent to your email.',
+          needsVerification: true,
+          email: normalizedEmail,
+          role: user.role
+        });
+      }
+
+      const token = generateToken(user);
       fallbackDb.saveLog(`${user.role} "${nameStr}" signed in successfully`, 'Auth');
       return res.status(200).json({ token, user });
     }
@@ -318,8 +372,30 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ error: 'Incorrect password. Please try again.' });
     }
 
-    // Log the successful login in system audits
     const nameStr = user.role === 'NGO' ? user.ngoName : user.fullName;
+    const targetEmail = user.role === 'NGO' ? user.officialEmail : user.email;
+
+    // Check email verification status
+    if (!user.isVerified) {
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      user.emailVerificationToken = verificationCode;
+      await user.save();
+
+      try {
+        await emailService.sendVerificationEmail(targetEmail, verificationCode, nameStr);
+      } catch (emailErr) {
+        console.error('Failed to send verification email on login:', emailErr);
+      }
+
+      return res.status(200).json({
+        message: 'Account is not verified yet. A verification code has been sent to your email.',
+        needsVerification: true,
+        email: targetEmail,
+        role: user.role
+      });
+    }
+
+    // Log the successful login in system audits
     const newLog = new AuditLog({
       event: `${user.role} "${nameStr}" signed in successfully`,
       category: 'Auth'
