@@ -170,14 +170,21 @@ export function useMemberActions({
     }
   };
 
-  const handleCompleteSelfDelivery = async (id) => {
+  const handleCompleteSelfDelivery = async (id, otp) => {
     try {
-      const res = await api.completeSelfDelivery(id);
+      const res = await api.verifyDeliveryOtp(id, otp, currentMember.fullName);
       if (res.ok) {
         fetchAllData();
+        return true;
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Verification failed. Please check the NGO code.');
+        return false;
       }
     } catch (err) {
       console.error('Error completing self delivery:', err);
+      alert('Connection error. Please try again.');
+      return false;
     }
   };
 

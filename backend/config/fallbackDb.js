@@ -140,6 +140,7 @@ const fallbackDb = {
       status: 'Offer Posted',
       courier: 'None (Awaiting Courier)',
       otp: Math.floor(1000 + Math.random() * 9000).toString(),
+      deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(),
       ...donData
     };
     donations.unshift(newDon);

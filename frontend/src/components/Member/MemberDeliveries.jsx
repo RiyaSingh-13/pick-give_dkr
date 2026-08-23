@@ -61,14 +61,9 @@ export function MemberDeliveries({
                       <Badge status={statusStr} />
 
                       {task.status === 'In Transit' && (
-                        <Button
-                          onClick={() => handleCompleteDelivery(task.id)}
-                          variant="primary"
-                          size="sm"
-                          className="rounded-lg text-[10px] px-3.5 py-1.5 font-bold"
-                        >
-                          ✔️ Complete Delivery
-                        </Button>
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full uppercase tracking-wider select-none font-sans">
+                          🚚 In Transit
+                        </span>
                       )}
                     </div>
                   </div>
@@ -132,13 +127,67 @@ export function MemberDeliveries({
                             )}
                           </div>
                         </div>
+                      ) : task.status === 'In Transit' ? (
+                        <div className="bg-[#FFFDF4] border border-amber-200 rounded-xl p-5 shadow-sm space-y-4 text-left font-sans relative overflow-hidden">
+                          <div className="absolute top-0 bottom-0 left-0 w-1 bg-amber-400"></div>
+                          <h4 className="text-xs font-extrabold text-amber-900 uppercase tracking-widest flex items-center gap-1.5 select-none">
+                            <span>🔑</span> Secure NGO Delivery OTP Required
+                          </h4>
+                          <p className="text-[11px] text-[#556B5D] font-semibold leading-relaxed">
+                            Ask the NGO staff for their **4-digit Delivery Handoff OTP** and enter it below to confirm and complete this delivery run:
+                          </p>
+                          <div className="space-y-3">
+                            <div className="flex gap-2">
+                              <input 
+                                type="text" 
+                                maxLength={4}
+                                placeholder="Enter 4-Digit NGO OTP"
+                                value={otpInputValues[task.id] || ''}
+                                onChange={(e) => setOtpInputValues({ ...otpInputValues, [task.id]: e.target.value.replace(/\D/g, '') })}
+                                className="bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm font-bold font-mono tracking-widest text-[#0F340F] focus:outline-none focus:ring-2 focus:ring-amber-400/40 w-full placeholder-amber-900/30 shadow-inner"
+                              />
+                              <Button
+                                onClick={async () => {
+                                  const otp = otpInputValues[task.id];
+                                  if (!otp || otp.length !== 4) {
+                                    setOtpErrors({ ...otpErrors, [task.id]: 'Please enter a valid 4-digit OTP code.' });
+                                    return;
+                                  }
+                                  try {
+                                    const res = await api.verifyDeliveryOtp(task.id, otp, currentMember.fullName);
+                                    const data = await res.json();
+                                    if (res.ok) {
+                                      setOtpInputValues({ ...otpInputValues, [task.id]: '' });
+                                      setOtpErrors({ ...otpErrors, [task.id]: '' });
+                                      fetchAllData();
+                                    } else {
+                                      setOtpErrors({ ...otpErrors, [task.id]: data.error || 'Failed to verify OTP.' });
+                                    }
+                                  } catch (err) {
+                                    setOtpErrors({ ...otpErrors, [task.id]: 'Connection error. Please try again.' });
+                                  }
+                                }}
+                                variant="primary"
+                                className="rounded-lg font-bold text-xs"
+                              >
+                                Confirm & Complete
+                              </Button>
+                            </div>
+
+                            {otpErrors[task.id] && (
+                              <p className="text-[10px] font-bold text-red-600 animate-pulse">
+                                ⚠️ {otpErrors[task.id]}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       ) : (
                         <div className="bg-[#F8FAF5] border border-[#0F340F]/8 rounded-xl p-5 shadow-sm space-y-4 text-left font-sans">
                           <h4 className="text-xs font-extrabold text-[#0F340F] uppercase tracking-widest flex items-center gap-1.5 select-none">
-                            <span>🚚</span> Delivery Progress & Instructions
+                            <span>🚚</span> Delivery Completed
                           </h4>
                           <div className="space-y-2 text-xs font-semibold text-[#556B5D] leading-relaxed">
-                            <p><span className="text-[#0F340F] font-bold">Logistics Status:</span> {task.status === 'Delivered' ? 'Delivered successfully! Thank you for your support.' : 'Verification code verified. Packaged cargo is currently in transit to NGO shelter center.'}</p>
+                            <p><span className="text-[#0F340F] font-bold">Logistics Status:</span> Delivered successfully! Thank you for your volunteer service.</p>
                             <p><span className="text-[#0F340F] font-bold">Recipient NGO Hub:</span> {task.ngo}</p>
                             <p className="text-[11px] text-[#78A642] font-extrabold">🌿 Double platform impact points unlocked for this run!</p>
                           </div>

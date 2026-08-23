@@ -24,7 +24,8 @@ export function useNgoActions({
     courier: d.courier || 'None (Awaiting Courier)',
     route: `${d.donor} ➔ ${d.ngo} Shelter`,
     item: d.title,
-    status: d.status === 'In Transit' ? 'On the way' : 'Successfully delivered'
+    status: d.status === 'In Transit' ? 'On the way' : 'Successfully delivered',
+    deliveryOtp: d.deliveryOtp
   }));
 
   const ngoInDeliveries = donations.filter(d => currentNgo && d.ngo === currentNgo.ngoName && d.status === 'In Transit').length;

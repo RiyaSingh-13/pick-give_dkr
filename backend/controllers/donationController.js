@@ -557,3 +557,66 @@ exports.completeSelfDelivery = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+// OTP verify karke delivery/drop-off confirm karne wala controller
+exports.verifyDeliveryOtp = async (req, res) => {
+  try {
+    const { otp, volunteerName } = req.body;
+    if (!otp) {
+      return res.status(400).json({ error: 'Verification OTP is required.' });
+    }
+
+    // Fallback DB
+    if (!global.isDbConnected) {
+      const donation = fallbackDb.findDonationById(req.params.id);
+      if (!donation) {
+        return res.status(404).json({ error: 'Donation record not found.' });
+      }
+
+      if (donation.deliveryOtp !== otp) {
+        return res.status(400).json({ error: 'Incorrect delivery verification OTP. Please verify with the NGO.' });
+      }
+
+      const isSelf = donation.deliveryMode === 'Self';
+      const courierName = isSelf ? 'Donor' : (volunteerName || 'Volunteer');
+
+      const updates = {
+        status: 'Delivered',
+        courier: isSelf ? 'Self (Completed)' : `${courierName} (Completed)`
+      };
+      fallbackDb.updateDonation(req.params.id, updates);
+      fallbackDb.saveLog(`Delivery verified & completed for "${donation.title}" by ${courierName}`, 'Delivery');
+
+      const updatedDonation = fallbackDb.findDonationById(req.params.id);
+      return res.status(200).json(updatedDonation);
+    }
+
+    // MongoDB
+    const donation = await Donation.findById(req.params.id);
+    if (!donation) {
+      return res.status(404).json({ error: 'Donation record not found.' });
+    }
+
+    if (donation.deliveryOtp !== otp) {
+      return res.status(400).json({ error: 'Incorrect delivery verification OTP. Please verify with the NGO.' });
+    }
+
+    const isSelf = donation.deliveryMode === 'Self';
+    const courierName = isSelf ? 'Donor' : (volunteerName || 'Volunteer');
+
+    donation.status = 'Delivered';
+    donation.courier = isSelf ? 'Self (Completed)' : `${courierName} (Completed)`;
+    await donation.save();
+
+    const newLog = new AuditLog({
+      event: `Delivery verified & completed for "${donation.title}" by ${courierName}`,
+      category: 'Delivery'
+    });
+    await newLog.save();
+
+    res.status(200).json(donation);
+  } catch (error) {
+    console.error('verifyDeliveryOtp Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};

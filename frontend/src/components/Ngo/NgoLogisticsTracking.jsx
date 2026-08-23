@@ -43,11 +43,17 @@ export function NgoLogisticsTracking({
             </div>
 
             {delivery.status === 'On the way' && (
-              <div className="bg-[#F8FAF5] p-3 rounded-xl border border-[#0F340F]/5 flex items-center justify-between text-[10px]">
-                <span className="font-bold text-[#556B5D] flex items-center gap-1">
-                  📍 Live Courier Tracking Locked
-                </span>
-                <span className="text-[#78A642] font-black uppercase">Active (GPS verified)</span>
+              <div className="space-y-2">
+                <div className="bg-[#FFFDF4] border border-amber-200 p-3 rounded-xl flex items-center justify-between text-xs font-semibold">
+                  <span className="text-amber-900 font-bold">🔑 Delivery Verification OTP:</span>
+                  <span className="font-mono text-sm font-black text-amber-700 bg-white px-2 py-0.5 rounded border border-amber-200">{delivery.deliveryOtp || '1234'}</span>
+                </div>
+                <div className="bg-[#F8FAF5] p-3 rounded-xl border border-[#0F340F]/5 flex items-center justify-between text-[10px]">
+                  <span className="font-bold text-[#556B5D] flex items-center gap-1">
+                    📍 Live Courier Tracking Locked
+                  </span>
+                  <span className="text-[#78A642] font-black uppercase">Active (GPS verified)</span>
+                </div>
               </div>
             )}
           </Card>

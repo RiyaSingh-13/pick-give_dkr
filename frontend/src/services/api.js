@@ -81,6 +81,13 @@ export const api = {
       body: JSON.stringify({ otp, volunteerName })
     });
   },
+  verifyDeliveryOtp: async (id, otp, volunteerName) => {
+    return fetch(`${API_BASE}/api/donations/${id}/verify-delivery`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ otp, volunteerName })
+    });
+  },
 
   // NGO Requirements
   getRequests: async () => {

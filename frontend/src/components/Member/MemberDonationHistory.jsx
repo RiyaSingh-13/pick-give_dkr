@@ -13,6 +13,7 @@ export function MemberDonationHistory({
   handleStartSelfTransit,
   handleCompleteSelfDelivery
 }) {
+  const [selfDeliveryOtp, setSelfDeliveryOtp] = React.useState('');
   return (
     <div className="space-y-6 animate-fade-in text-left">
       <SectionHeader title="MY DONATIONS LOG" icon="🎁" />
@@ -92,24 +93,68 @@ export function MemberDonationHistory({
                                 <h4 className="text-xs font-extrabold text-[#0F340F] uppercase tracking-widest flex items-center gap-1.5 select-none">
                                   <span>🙋‍♂️</span> Self-Delivery Instructions
                                 </h4>
-                                <p className="text-[11px] text-[#556B5D] leading-normal font-semibold">
-                                  Since you chose **Self Deliver**, please drop off this donation at the NGO's address. Once you're ready, click "Start Self Delivery" below. When you successfully hand over the package, click "Complete Self Delivery".
-                                </p>
-                                {item.status === 'Accepted' && (
-                                  <Button
-                                    onClick={() => handleStartSelfTransit(itemId)}
-                                    className="w-full mt-2 font-sans rounded-xl py-2.5"
-                                  >
-                                    🚀 Start Self Delivery (Mark In Transit)
-                                  </Button>
+                                
+                                {item.status === 'Offer Posted' && (
+                                  <div className="space-y-2">
+                                    <p className="text-[11px] text-amber-700 leading-normal font-bold bg-amber-50 p-2.5 border border-amber-200/50 rounded-xl font-sans">
+                                      ⏳ Awaiting NGO Acceptance:<br/>
+                                      <span className="font-semibold text-amber-600">Please wait for the NGO to accept this donation offer. Once accepted, the destination address details will be unlocked and you will be able to start delivery.</span>
+                                    </p>
+                                  </div>
                                 )}
+
+                                {item.status === 'Accepted' && (
+                                  <>
+                                    <p className="text-[11px] text-[#556B5D] leading-normal font-semibold font-sans">
+                                      The NGO has accepted your offer! When you are ready to drop off the items at the NGO's address shown on the map, click the button below to start self-delivery.
+                                    </p>
+                                    <Button
+                                      onClick={() => handleStartSelfTransit(itemId)}
+                                      className="w-full mt-2 font-sans rounded-xl py-2.5"
+                                    >
+                                      🚀 Start Self Delivery (Mark In Transit)
+                                    </Button>
+                                  </>
+                                )}
+
                                 {item.status === 'In Transit' && (
-                                  <Button
-                                    onClick={() => handleCompleteSelfDelivery(itemId)}
-                                    className="w-full mt-2 bg-[#0F340F] hover:bg-[#1C4A1C] font-sans py-2.5 rounded-xl animate-pulse"
-                                  >
-                                    ✔️ Complete Self Delivery (Mark Delivered)
-                                  </Button>
+                                  <div className="space-y-3 pt-1">
+                                    <p className="text-[11px] text-[#556B5D] leading-normal font-semibold font-sans">
+                                      You are currently delivering the package. When you arrive at the NGO facility, **ask the NGO staff for their 4-digit Delivery Handoff OTP** and enter it below to complete the delivery:
+                                    </p>
+                                    <div className="flex gap-2">
+                                      <input 
+                                        type="text" 
+                                        maxLength={4}
+                                        placeholder="Enter NGO OTP"
+                                        value={selfDeliveryOtp}
+                                        onChange={(e) => setSelfDeliveryOtp(e.target.value.replace(/\D/g, ''))}
+                                        className="flex-1 px-3.5 py-2 border border-[#0F340F]/15 rounded-xl bg-white text-xs font-mono text-center font-bold tracking-widest focus:outline-none focus:border-[#78A642]"
+                                      />
+                                      <Button
+                                        onClick={async () => {
+                                          if (!selfDeliveryOtp || selfDeliveryOtp.length !== 4) {
+                                            alert("Please enter a valid 4-digit OTP code.");
+                                            return;
+                                          }
+                                          const success = await handleCompleteSelfDelivery(itemId, selfDeliveryOtp);
+                                          if (success) {
+                                            setSelfDeliveryOtp('');
+                                          }
+                                        }}
+                                        className="bg-[#0F340F] hover:bg-[#1C4A1C] font-sans py-2 px-4 rounded-xl text-xs"
+                                      >
+                                        Verify & Complete
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {item.status === 'Delivered' && (
+                                  <div className="bg-emerald-50 text-emerald-800 p-3 rounded-xl border border-emerald-200 text-xs font-semibold leading-relaxed flex items-center gap-2 font-sans">
+                                    <span>✔️</span>
+                                    <span>Self-delivery completed successfully. Thank you for your contribution!</span>
+                                  </div>
                                 )}
                               </div>
                             ) : (

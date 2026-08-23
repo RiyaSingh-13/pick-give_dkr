@@ -48,6 +48,10 @@ const DonationSchema = new mongoose.Schema({
     type: String,
     default: () => Math.floor(1000 + Math.random() * 9000).toString()
   },
+  deliveryOtp: {
+    type: String,
+    default: () => Math.floor(1000 + Math.random() * 9000).toString()
+  },
   date: {
     type: String,
     default: () => new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
