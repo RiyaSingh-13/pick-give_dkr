@@ -35,8 +35,9 @@ export function AdminSignIn({ setIsAdminLoggedIn, navigateTo }) {
       const res = await api.login(email, password);
 
       if (res.ok) {
-        const user = await res.json();
-        if (user.role === 'Admin') {
+        const data = await res.json();
+        if (data.user && data.user.role === 'Admin') {
+          localStorage.setItem('token', data.token);
           setSuccess(true);
           setTimeout(() => {
             setIsAdminLoggedIn(true);
@@ -67,8 +68,9 @@ export function AdminSignIn({ setIsAdminLoggedIn, navigateTo }) {
       const res = await api.login('admin@gmail.com', 'admin123');
 
       if (res.ok) {
-        const user = await res.json();
-        if (user.role === 'Admin') {
+        const data = await res.json();
+        if (data.user && data.user.role === 'Admin') {
+          localStorage.setItem('token', data.token);
           setSuccess(true);
           setTimeout(() => {
             setIsAdminLoggedIn(true);
