@@ -148,25 +148,6 @@ export function useMemberActions({
     }
   };
 
-  const handleCompleteDelivery = async (id) => {
-    if (id === '1105') {
-      setClaimedTasks(claimedTasks.filter(item => item !== '1105'));
-      return;
-    }
-    try {
-      const res = await api.completeDelivery(id, currentMember.fullName);
-      if (res.ok) {
-        fetchAllData();
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        alert(errData.error || 'Failed to complete delivery.');
-      }
-    } catch (err) {
-      console.error('Error completing delivery:', err);
-      alert('Connection error. Please check your backend connection.');
-    }
-  };
-
   const handleStartSelfTransit = async (id) => {
     try {
       const res = await api.startSelfTransit(id);
@@ -222,7 +203,6 @@ export function useMemberActions({
     volunteerTasks,
     handleBookingSubmit,
     handleClaimTask,
-    handleCompleteDelivery,
     handleStartSelfTransit,
     handleCompleteSelfDelivery
   };

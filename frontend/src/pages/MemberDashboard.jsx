@@ -42,7 +42,6 @@ export function MemberDashboard({
   ngoRequests,
   handleBookingSubmit,
   handleClaimTask,
-  handleCompleteDelivery,
   handleStartSelfTransit,
   handleCompleteSelfDelivery,
   fetchAllData,
@@ -118,7 +117,6 @@ export function MemberDashboard({
             setOtpInputValues={setOtpInputValues}
             otpErrors={otpErrors}
             setOtpErrors={setOtpErrors}
-            handleCompleteDelivery={handleCompleteDelivery}
             fetchAllData={fetchAllData}
           />
         );

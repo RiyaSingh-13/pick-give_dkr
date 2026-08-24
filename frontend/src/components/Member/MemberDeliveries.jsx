@@ -16,7 +16,6 @@ export function MemberDeliveries({
   setOtpInputValues,
   otpErrors,
   setOtpErrors,
-  handleCompleteDelivery,
   fetchAllData
 }) {
   return (

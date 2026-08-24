@@ -75,21 +75,8 @@ export const api = {
       body: JSON.stringify({ volunteerName })
     });
   },
-  completeDelivery: async (id, volunteerName) => {
-    return request(`${API_BASE}/api/donations/${id}/complete`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ volunteerName })
-    });
-  },
   startSelfTransit: async (id) => {
     return request(`${API_BASE}/api/donations/${id}/self-transit`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
-    });
-  },
-  completeSelfDelivery: async (id) => {
-    return request(`${API_BASE}/api/donations/${id}/self-complete`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }
     });
