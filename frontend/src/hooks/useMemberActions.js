@@ -138,9 +138,13 @@ export function useMemberActions({
         } else {
           setClaimedTasks([...claimedTasks, taskId]);
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'Failed to claim delivery run.');
       }
     } catch (err) {
       console.error('Error claiming task:', err);
+      alert('Connection error. Please check your backend connection.');
     }
   };
 
@@ -153,9 +157,13 @@ export function useMemberActions({
       const res = await api.completeDelivery(id, currentMember.fullName);
       if (res.ok) {
         fetchAllData();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'Failed to complete delivery.');
       }
     } catch (err) {
       console.error('Error completing delivery:', err);
+      alert('Connection error. Please check your backend connection.');
     }
   };
 
@@ -164,9 +172,13 @@ export function useMemberActions({
       const res = await api.startSelfTransit(id);
       if (res.ok) {
         fetchAllData();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'Failed to start transit.');
       }
     } catch (err) {
       console.error('Error starting self transit:', err);
+      alert('Connection error. Please check your backend connection.');
     }
   };
 

@@ -38,9 +38,13 @@ export function useNgoActions({
       const res = await api.acceptDonation(id, currentNgo.ngoName);
       if (res.ok) {
         fetchAllData();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'Failed to accept donation offer.');
       }
     } catch (err) {
       console.error('Error accepting donation:', err);
+      alert('Connection error. Please check your backend connection.');
     }
   };
 
