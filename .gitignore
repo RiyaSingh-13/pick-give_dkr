@@ -23,3 +23,7 @@ yarn-error.log*
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Backups
+original_frontend_src.txt
+
