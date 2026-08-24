@@ -14,6 +14,7 @@ export function NgoReceivedDonations({
     { label: 'Category' },
     { label: 'Donor Details' },
     { label: 'Courier Partner' },
+    { label: 'Delivery OTP' },
     { label: 'Status' },
     { label: 'Accepted Date' }
   ];
@@ -67,6 +68,11 @@ export function NgoReceivedDonations({
                     🚚 {item.courier}
                   </span>
                 )}
+              </td>
+              <td className="px-6 py-4">
+                <span className="font-mono text-sm font-black text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded shadow-inner">
+                  {item.deliveryOtp}
+                </span>
               </td>
               <td className="px-6 py-4">
                 <Badge status={item.status} />
