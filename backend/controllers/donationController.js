@@ -3,6 +3,8 @@ const Donation = require('../models/Donation');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const fallbackDb = require('../config/fallbackDb');
+const emailService = require('../utils/emailService');
+
 
 // Nayi donation book karne wala controller
 exports.createDonation = async (req, res) => {
@@ -406,6 +408,20 @@ exports.verifyPickup = async (req, res) => {
       };
       // Fallback DB me updates apply karna
       fallbackDb.updateDonation(req.params.id, updates);
+
+      // Send email to NGO in fallback mode
+      const allUsers = fallbackDb.getUsers();
+      const matchedNgoFallback = allUsers.find(u => u.role === 'NGO' && u.ngoName === donation.ngo);
+      if (matchedNgoFallback && matchedNgoFallback.officialEmail) {
+        emailService.sendDeliveryOtpEmail(
+          matchedNgoFallback.officialEmail,
+          donation.deliveryOtp,
+          donation.ngo,
+          donation.title,
+          volunteerName
+        ).catch(err => console.error('Failed to send Delivery OTP email (fallback db):', err.message));
+      }
+
       // Transit start ka audit log save karna
       fallbackDb.saveLog(`Pickup verified & transit started for "${donation.title}" by "${volunteerName}"`, 'Delivery');
 
@@ -431,6 +447,22 @@ exports.verifyPickup = async (req, res) => {
     donation.courier = `${volunteerName} (Active)`;
     // Changes save karna database me
     await donation.save();
+
+    // Send email to NGO (MongoDB)
+    try {
+      const matchedNgo = await User.findOne({ role: 'NGO', ngoName: donation.ngo });
+      if (matchedNgo && matchedNgo.officialEmail) {
+        await emailService.sendDeliveryOtpEmail(
+          matchedNgo.officialEmail,
+          donation.deliveryOtp,
+          donation.ngo,
+          donation.title,
+          volunteerName
+        );
+      }
+    } catch (emailErr) {
+      console.error('Failed to send Delivery OTP email to NGO:', emailErr.message);
+    }
 
     // Audit log object create karna
     const newLog = new AuditLog({
@@ -467,6 +499,20 @@ exports.startSelfTransit = async (req, res) => {
       };
       // Fallback DB me updates save karna
       fallbackDb.updateDonation(req.params.id, updates);
+
+      // Send email to NGO in fallback mode (Self Transit)
+      const allUsers = fallbackDb.getUsers();
+      const matchedNgoFallback = allUsers.find(u => u.role === 'NGO' && u.ngoName === donation.ngo);
+      if (matchedNgoFallback && matchedNgoFallback.officialEmail) {
+        emailService.sendDeliveryOtpEmail(
+          matchedNgoFallback.officialEmail,
+          donation.deliveryOtp,
+          donation.ngo,
+          donation.title,
+          donation.donor || 'Donor'
+        ).catch(err => console.error('Failed to send Delivery OTP email (fallback db - self-transit):', err.message));
+      }
+
       // Self-delivery transit start karne ka log save karna
       fallbackDb.saveLog(`Donor started self-delivery transit for "${donation.title}"`, 'Delivery');
       // Updated donation return karna
@@ -485,6 +531,22 @@ exports.startSelfTransit = async (req, res) => {
     donation.status = 'In Transit';
     // Database me update save karna
     await donation.save();
+
+    // Send email to NGO (MongoDB - Self Transit)
+    try {
+      const matchedNgo = await User.findOne({ role: 'NGO', ngoName: donation.ngo });
+      if (matchedNgo && matchedNgo.officialEmail) {
+        await emailService.sendDeliveryOtpEmail(
+          matchedNgo.officialEmail,
+          donation.deliveryOtp,
+          donation.ngo,
+          donation.title,
+          donation.donor || 'Donor'
+        );
+      }
+    } catch (emailErr) {
+      console.error('Failed to send Delivery OTP email to NGO (self-transit):', emailErr.message);
+    }
 
     // Audit log prepare karna
     const newLog = new AuditLog({
