@@ -254,7 +254,7 @@ export function MemberDashboard({
                 <span>Urgent NGO Needs</span>
                 
                 <span className="bg-white text-[#E32121] rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black leading-none shadow-[0_1px_3px_rgba(0,0,0,0.15)]">
-                  {ngoRequests.length}
+                  {ngoRequests.filter(r => r.status !== 'Stopped').length}
                 </span>
               </button>
 
