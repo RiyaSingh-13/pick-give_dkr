@@ -94,7 +94,9 @@ export function MemberUrgentNeeds({
                           photoName: '',
                           address: currentMember.location,
                           instructions: '',
-                          ngoName: req.ngo
+                          ngoName: req.ngo,
+                          isFulfillment: true,
+                          requestId: req._id || req.id
                         });
                         setDashboardTab('donate');
                       }}

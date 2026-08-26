@@ -88,7 +88,9 @@ export function useMemberActions({
         description: newBooking.description,
         instructions: newBooking.instructions,
         photo: newBooking.photoName,
-        deliveryMode: newBooking.deliveryMode || 'Volunteer'
+        deliveryMode: newBooking.deliveryMode || 'Volunteer',
+        isFulfillment: newBooking.isFulfillment || false,
+        requestId: newBooking.requestId || null
       });
       if (res.ok) {
         setTimeout(() => {
@@ -103,7 +105,9 @@ export function useMemberActions({
             address: currentMember?.location || '',
             instructions: '',
             ngoName: 'Common Pool',
-            deliveryMode: 'Volunteer'
+            deliveryMode: 'Volunteer',
+            isFulfillment: false,
+            requestId: null
           });
           fetchAllData();
           setDashboardTab('donations');

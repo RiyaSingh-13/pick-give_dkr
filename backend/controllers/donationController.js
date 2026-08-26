@@ -3,6 +3,7 @@ const Donation = require('../models/Donation');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const fallbackDb = require('../config/fallbackDb');
+const Request = require('../models/Request');
 const emailService = require('../utils/emailService');
 
 
@@ -10,7 +11,7 @@ const emailService = require('../utils/emailService');
 exports.createDonation = async (req, res) => {
   try {
     // Request body se donation ki details nikal rahe hain
-    const { title, category, donor, donorEmail, ngo, location, description, instructions, photo, deliveryMode } = req.body;
+    const { title, category, donor, donorEmail, ngo, location, description, instructions, photo, deliveryMode, isFulfillment, requestId } = req.body;
 
     // Zaroori fields check kar rahe hain, agar koi field missing hai to error return karenge
     if (!title || !category || !donor || !donorEmail || !ngo || !location) {
@@ -19,16 +20,31 @@ exports.createDonation = async (req, res) => {
 
     // Agar MongoDB connected nahi hai to fallback database use hoga
     if (!global.isDbConnected) {
+      const initialStatus = (isFulfillment || (title && title.startsWith('Fulfillment:'))) ? 'Accepted' : 'Offer Posted';
       // Fallback DB me donation save karna aur delivery mode ke hisab se courier status set karna
       const newDonation = fallbackDb.saveDonation({
         ...req.body,
+        status: initialStatus,
         courier: deliveryMode === 'Self' ? 'Self (Donor Delivery)' : 'None (Awaiting Courier)'
       });
+
+      if (requestId) {
+        const matchedRequest = fallbackDb.getRequests().find(r => r._id === requestId || r.id === requestId);
+        if (matchedRequest && matchedRequest.fulfilled) {
+          const [curr, total] = matchedRequest.fulfilled.split('/').map(Number);
+          const nextCurr = Math.min(total, curr + 1);
+          matchedRequest.fulfilled = `${nextCurr}/${total}`;
+          fallbackDb.updateRequest(requestId, matchedRequest);
+        }
+      }
+
       // Audit log save karna fallback DB me
       fallbackDb.saveLog(`Member "${donor}" booked new donation: "${title}" for "${ngo}"`, 'Action');
       // Success response bhejna
       return res.status(201).json(newDonation);
     }
+
+    const initialStatus = (isFulfillment || (title && title.startsWith('Fulfillment:'))) ? 'Accepted' : 'Offer Posted';
 
     // MongoDB ke liye naya Donation object banana
     const newDonation = new Donation({
@@ -42,11 +58,26 @@ exports.createDonation = async (req, res) => {
       instructions,
       photo,
       deliveryMode,
+      status: initialStatus,
       courier: deliveryMode === 'Self' ? 'Self (Donor Delivery)' : 'None (Awaiting Courier)'
     });
 
     // Donation ko database me save karna
     await newDonation.save();
+
+    if (requestId) {
+      try {
+        const matchedRequest = await Request.findById(requestId);
+        if (matchedRequest && matchedRequest.fulfilled) {
+          const [curr, total] = matchedRequest.fulfilled.split('/').map(Number);
+          const nextCurr = Math.min(total, curr + 1);
+          matchedRequest.fulfilled = `${nextCurr}/${total}`;
+          await matchedRequest.save();
+        }
+      } catch (err) {
+        console.error('Error updating request progress in createDonation:', err);
+      }
+    }
 
     // Audit log save karne ke liye object banana
     const newLog = new AuditLog({
